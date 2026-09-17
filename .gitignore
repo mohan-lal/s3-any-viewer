@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# build output (CI rebuilds it; releases ship the zip)
+dist/
+release/
+
+# generated sample data
+fixtures/
+
+# local tooling
+.claude/
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db

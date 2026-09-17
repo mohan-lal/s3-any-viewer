@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>S3 Any Viewer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon32.png" width="20" height="20" alt="">
+    <h1>S3 Any Viewer</h1>
+  </header>
+
+  <label class="row toggle">
+    <input type="checkbox" id="interceptEnabled">
+    <span>Intercept S3 <b>Open</b> links and show them in the viewer</span>
+  </label>
+  <label class="row toggle sub">
+    <input type="checkbox" id="interceptDownloads">
+    <span>Also intercept <b>Download</b> links</span>
+  </label>
+
+  <div class="section">
+    <div class="label">Open a URL in the viewer</div>
+    <form id="urlForm" class="row">
+      <input type="url" id="urlInput" placeholder="https://bucket.s3.amazonaws.com/key?X-Amz-..." required>
+      <button type="submit">Open</button>
+    </form>
+    <div class="hint">Non-AWS hosts will ask for permission the first time.</div>
+  </div>
+
+  <div class="section">
+    <div class="label">Open a local file</div>
+    <button id="openLocal" class="wide">Choose file...</button>
+  </div>
+
+  <div class="section">
+    <div class="label">Supported formats</div>
+    <div id="formats" class="formats"></div>
+  </div>
+
+  <footer>
+    <span id="status"></span>
+  </footer>
+</body>
+<script type="module" src="popup.js"></script>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>S3 Any Viewer</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="viewer.css">
+  <link rel="stylesheet" href="hljs-light.css" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="hljs-dark.css" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+  <header id="topbar">
+    <img src="icons/icon32.png" width="22" height="22" alt="" class="logo">
+    <div class="title">
+      <div id="fileName" class="file-name">Loading…</div>
+      <div id="filePath" class="file-path"></div>
+    </div>
+    <div id="meta" class="meta"></div>
+    <span class="grow"></span>
+    <label class="ctl">Format
+      <select id="formatSelect" title="Override the detected format"></select>
+    </label>
+    <button id="rawBtn" class="tb-btn" title="Show as plain text">Raw</button>
+    <button id="reloadBtn" class="tb-btn" title="Fetch the object again">Reload</button>
+    <button id="downloadBtn" class="tb-btn" title="Save the original bytes">Download</button>
+    <button id="copyBtn" class="tb-btn" title="Copy the decoded text to the clipboard">Copy</button>
+  </header>
+
+  <div id="crumbs" class="crumbs" hidden></div>
+  <div id="toolbar" class="toolbar"></div>
+
+  <main id="content">
+    <div id="progress" class="progress">
+      <div class="spinner"></div>
+      <div id="progressText">Fetching…</div>
+      <div class="bar"><div id="progressBar"></div></div>
+      <button id="cancelBtn" class="tb-btn">Cancel</button>
+    </div>
+    <div id="drop" class="drop" hidden>
+      <div>
+        <h2>Open a local file</h2>
+        <p>Drop a file here or <label class="link">choose one<input type="file" id="filePicker" hidden></label>.</p>
+        <p class="muted">Everything is parsed in this tab. Nothing is uploaded anywhere.</p>
+      </div>
+    </div>
+    <div id="mount"></div>
+  </main>
+
+  <footer id="statusbar"><span id="status"></span><span class="grow"></span><span id="detectInfo" class="muted"></span></footer>
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>

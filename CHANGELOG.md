@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- "Open link in S3 Any Viewer" on a non-AWS site failed with a bare "Failed to fetch". The context menu now requests the site's host permission at click time, and the viewer shows a "Grant access" button with an explanation if a fetch is still blocked.
+
 ## [0.1.0] - 2026-09-18
 
 ### Added

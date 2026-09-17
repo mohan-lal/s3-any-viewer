@@ -79,10 +79,20 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && (changes.interceptEnabled || changes.interceptDownloads)) applyRules();
 });
 
-chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId === 'open-in-viewer' && info.linkUrl) {
-    chrome.tabs.create({ url: viewerUrlFor(encodeURIComponent(info.linkUrl)) });
-  }
+const isAwsHost = (hostname) => /(^|\.)amazonaws\.com(\.cn)?$/.test(hostname);
+
+chrome.contextMenus.onClicked.addListener(async (info) => {
+  if (info.menuItemId !== 'open-in-viewer' || !info.linkUrl) return;
+  // Non-AWS origins need an optional host permission; a context-menu click counts as the user gesture
+  // that permissions.request() requires, so ask here and the viewer can fetch straight away.
+  try {
+    const u = new URL(info.linkUrl);
+    if (/^https?:$/.test(u.protocol) && !isAwsHost(u.hostname)) {
+      const origins = [`${u.origin}/*`];
+      if (!(await chrome.permissions.contains({ origins }))) await chrome.permissions.request({ origins });
+    }
+  } catch { /* the viewer shows its own grant button if this did not work */ }
+  chrome.tabs.create({ url: viewerUrlFor(encodeURIComponent(info.linkUrl)) });
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

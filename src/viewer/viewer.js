@@ -140,8 +140,38 @@ async function open({ url }) {
     await afterLoad();
   } catch (e) {
     if (e.name === 'AbortError') { hideProgress(); setStatus('Cancelled.'); return; }
+    if (e instanceof TypeError && await showPermissionHelp(url)) return;
     showError('Could not load the object', e);
   }
+}
+
+// A TypeError from fetch() on a non-AWS origin almost always means the extension has no host permission
+// for that site (the browser then blocks the cross-origin read). Offer to grant it and retry.
+async function showPermissionHelp(url) {
+  let origin, hostname;
+  try { ({ origin, hostname } = new URL(url)); } catch { return false; }
+  if (/(^|\.)amazonaws\.com(\.cn)?$/.test(hostname)) return false;
+  const perms = typeof chrome !== 'undefined' && chrome.permissions;
+  const origins = [`${origin}/*`];
+  const granted = perms ? await chrome.permissions.contains({ origins }).catch(() => false) : false;
+  hideProgress();
+  ui.toolbar.innerHTML = '';
+  const grantBtn = el('button.tb-btn.on', {
+    onclick: async () => {
+      const ok = await chrome.permissions.request({ origins }).catch(() => false);
+      if (ok) open({ url }); else setStatus(`Access to ${hostname} was not granted.`);
+    },
+  }, `Grant access to ${hostname}`);
+  ui.mount.replaceChildren(el('div.big-prompt',
+    el('h3', granted ? `Could not reach ${hostname}` : `${hostname} is not an AWS host`),
+    el('p', granted
+      ? 'The site permission is already granted, so the request itself failed: the server may be offline, block cross-site reads, or the link may be broken. Try Reload.'
+      : 'S3 Any Viewer only has permission for *.amazonaws.com by default. To read files from this site, grant it access. Chrome will ask you to confirm the exact origin, and you can revoke it any time from the extension\'s details page.'),
+    el('div.row', perms && !granted ? grantBtn : null, el('button.tb-btn', { onclick: () => open({ url }) }, 'Retry')),
+    !perms ? el('p.muted', 'Running outside the extension: the browser blocked the cross-origin request (CORS).') : null,
+  ));
+  setStatus(granted ? 'Fetch failed' : 'Permission needed');
+  return true;
 }
 
 function askLarge(size, rangeOk) {

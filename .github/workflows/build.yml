@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write        # create the GitHub Release on tags
+  id-token: write        # sign the build provenance attestation
+  attestations: write    # store the attestation
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,13 +36,33 @@ jobs:
       - name: Package
         run: npm run package
 
+      - name: Per-file checksums
+        run: |
+          (cd dist && find . -type f | sort | xargs sha256sum) > release/SHA256SUMS.txt
+          sha256sum release/*.zip >> release/SHA256SUMS.txt
+          cat release/SHA256SUMS.txt
+
       - uses: actions/upload-artifact@v4
         with:
           name: s3-any-viewer-${{ github.sha }}
-          path: release/*.zip
+          path: release/*
+
+      - name: Build provenance attestation
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release/*.zip
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: release/*.zip
+          files: release/*
+          body: |
+            Built by GitHub Actions from `${{ github.sha }}`.
+
+            Verify the package:
+            ```
+            gh attestation verify s3-any-viewer-*.zip --owner ${{ github.repository_owner }}
+            ```
+            `SHA256SUMS.txt` lists the hash of every file inside the package and of the zip. See SECURITY.md for comparing against an installed copy.

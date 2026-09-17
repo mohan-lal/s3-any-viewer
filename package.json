@@ -11,7 +11,17 @@
   },
   "bugs": "https://github.com/mohan-lal/s3-any-viewer/issues",
   "homepage": "https://github.com/mohan-lal/s3-any-viewer#readme",
-  "keywords": ["chrome-extension", "aws", "s3", "viewer", "csv", "json", "parquet", "xlsx", "manifest-v3"],
+  "keywords": [
+    "chrome-extension",
+    "aws",
+    "s3",
+    "viewer",
+    "csv",
+    "json",
+    "parquet",
+    "xlsx",
+    "manifest-v3"
+  ],
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -22,11 +32,13 @@
     "fixtures": "node scripts/make-fixtures.mjs",
     "serve": "node scripts/serve.mjs",
     "package": "node scripts/package.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('release',{recursive:true,force:true})\""
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
-    "hyparquet-writer": "^0.16.0"
+    "hyparquet-writer": "^0.16.0",
+    "puppeteer-core": "^25.11.0"
   },
   "dependencies": {
     "apache-arrow": "^18.0.0",

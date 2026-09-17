@@ -9,7 +9,6 @@ release/
 fixtures/
 
 # local tooling
-.claude/
 .vscode/
 .idea/
 *.log

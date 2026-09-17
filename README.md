@@ -9,7 +9,19 @@
 
 CSV becomes a sortable table (any delimiter). JSON becomes a tree. Parquet, Arrow and Excel become tables with a schema panel. XML is pretty-printed. Images, PDF, video and ZIP contents just show up. Anything unknown gets a hex dump. No more S3 Select, no more "pick a type before you query", no more downloading a file just to peek inside it.
 
-> **Zero credentials.** The extension never asks for or stores AWS keys. The console's *Open* button already creates a short-lived presigned URL; the extension intercepts that navigation and renders the bytes on the client. The only network request is the one the console would have made anyway.
+> **Zero credentials.** The console's *Open* button already creates a short-lived presigned URL for the object. The extension intercepts that navigation and renders the bytes on the client. No AWS keys are involved, and the only network request is the one the console would have made anyway.
+
+![A CSV object from S3 rendered as a filterable table](store/assets/screenshot-1-csv.png)
+
+<details>
+<summary>More screenshots</summary>
+
+![Parquet with schema panel](store/assets/screenshot-2-parquet.png)
+![JSON tree](store/assets/screenshot-3-json.png)
+![Excel workbook](store/assets/screenshot-4-xlsx.png)
+![Large log with grep](store/assets/screenshot-5-log.png)
+
+</details>
 
 ---
 
@@ -145,13 +157,21 @@ src/
 
 Bundled with [esbuild](https://esbuild.github.io/) into `dist/`. No framework, no runtime dependencies beyond the parsers: [PapaParse](https://www.papaparse.com/), [hyparquet](https://github.com/hyparam/hyparquet), [Apache Arrow JS](https://arrow.apache.org/docs/js/), [SheetJS](https://sheetjs.com/), [highlight.js](https://highlightjs.org/), [marked](https://marked.js.org/), [DOMPurify](https://github.com/cure53/DOMPurify), [js-yaml](https://github.com/nodeca/js-yaml), [smol-toml](https://github.com/squirrelchat/smol-toml), [fflate](https://github.com/101arrowz/fflate).
 
-## Security and privacy
+## Security
 
-- **No credentials.** Nothing reads, stores or requests AWS keys, session tokens or cookies.
-- **Presigned URLs stay local.** They are placed after `#` in the viewer URL, so they never appear in a `Referer` header, and they are removed from the address bar once loading starts.
-- **Minimal permissions.** Host access is limited to `*.amazonaws.com`. Other origins are requested on demand from the popup and can be revoked in `chrome://extensions`.
-- **Inert rendering.** HTML previews run in an iframe with an empty `sandbox`. Markdown is sanitized with DOMPurify. SVG is displayed via `<img>`, which never executes scripts.
-- **No telemetry, no remote code.** All libraries are bundled at build time. See [PRIVACY.md](PRIVACY.md).
+The extension works from the presigned URL the S3 console generates when you click **Open**. It redirects that navigation to its own page and fetches the object once, with cookies disabled (`credentials: "omit"`). The console session is not involved: the extension has no content script on any AWS page and no permission to read cookies, tabs or history, and Chrome enforces that list regardless of what the code contains.
+
+| Permission | Used for |
+|---|---|
+| `declarativeNetRequest` | Redirect presigned `*.amazonaws.com` navigations to the viewer. This API cannot read request or response contents. |
+| `storage` | Two on/off preferences. |
+| `contextMenus` | The "Open link in S3 Any Viewer" entry. |
+| Host `*.amazonaws.com`, `*.amazonaws.com.cn` | Fetch the object bytes. Does not cover `console.aws.amazon.com`. |
+| Optional `<all_urls>` | Granted per site, only when you open a non-AWS URL yourself. Revocable in the extension's details page. |
+
+Rendering is inert: HTML previews run in an iframe with an empty `sandbox`, Markdown is sanitised with DOMPurify, and SVG is displayed through `<img>`. There is no telemetry and no remote code; every library is bundled at build time. Presigned URLs are kept in the URL fragment, so they are never sent in a `Referer` header, and are removed from the address bar once loading starts.
+
+[SECURITY.md](SECURITY.md) has the data-flow diagram, the threat model, a verification checklist for reviewers, and how to confirm that a released package was built from this repository. Data handling is summarised in [PRIVACY.md](PRIVACY.md).
 
 ## Limitations and roadmap
 

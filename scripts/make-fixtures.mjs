@@ -37,6 +37,19 @@ w('users-noext', delimited(','));
 w('users.json', JSON.stringify(rows.slice(0, 500), null, 2));
 w('config.json', JSON.stringify({ service: 'orders', version: 3, replicas: 2, endpoints: { primary: 'https://api.example.com', fallback: null }, tags: ['prod', 'eu-west-1'], limits: { rps: 1200, burst: 5000 }, nested: { deep: { deeper: { deepest: [1, 2, { x: true }] } } } }, null, 2));
 w('events.ndjson', rows.slice(0, 2000).map(r => JSON.stringify({ ts: r.signup, user: { id: r.id, city: r.city }, amount: r.amount })).join('\n'));
+w('order.json', JSON.stringify({
+  orderId: 'ORD-2026-000418', status: 'SHIPPED', placedAt: '2026-09-14T08:42:11Z', currency: 'INR',
+  customer: { id: 'C-10482', name: 'Priya Raman', email: 'priya.raman@example.com', tier: 'gold', address: { line1: '14 Cathedral Road', city: 'Chennai', state: 'Tamil Nadu', postalCode: '600086', country: 'IN' } },
+  items: [
+    { sku: 'BK-1042', title: 'Designing Data-Intensive Applications', qty: 1, unitPrice: 3299, tax: 164.95 },
+    { sku: 'EL-2210', title: 'USB-C Hub, 7-in-1', qty: 2, unitPrice: 2499, tax: 449.82, attributes: { color: 'space grey', warrantyMonths: 24 } },
+    { sku: 'ST-0031', title: 'Notebook A5 dotted', qty: 3, unitPrice: 349, tax: 52.35 },
+  ],
+  totals: { subtotal: 9344, tax: 667.12, shipping: 0, discount: -500, grandTotal: 9511.12 },
+  payment: { method: 'UPI', reference: 'upi-7f3a9c', captured: true },
+  shipment: { carrier: 'Delhivery', trackingNumber: 'DLV4491028831', events: [{ at: '2026-09-14T15:10:00Z', status: 'PICKED_UP' }, { at: '2026-09-15T04:22:00Z', status: 'IN_TRANSIT', hub: 'MAA-1' }, { at: '2026-09-16T09:05:00Z', status: 'OUT_FOR_DELIVERY' }] },
+  tags: ['prepaid', 'gift-wrap'], notes: null,
+}, null, 2));
 
 // XML
 w('orders.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<orders generated="${new Date().toISOString()}">${rows.slice(0, 300).map(r => `<order id="${r.id}"><customer>${r.name}</customer><city>${r.city}</city><amount currency="INR">${r.amount}</amount><active>${r.active}</active></order>`).join('')}</orders>`);
@@ -72,7 +85,7 @@ w('users.feather', tableToIPC(arrowTable, 'file'));
 // XLSX with two sheets
 const wb = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.slice(0, 1000)), 'Users');
-XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['City', 'Total'], ...cities.map(c => [c, rows.filter(r => r.city === c).reduce((s, r) => s + r.amount, 0)])]), 'Summary');
+XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['City', 'Customers', 'Total', 'Average'], ...cities.map(c => { const cr = rows.filter(r => r.city === c); const t = cr.reduce((s, r) => s + r.amount, 0); return [c, cr.length, Math.round(t * 100) / 100, Math.round(t / cr.length * 100) / 100]; })]), 'Summary');
 w('users.xlsx', XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }));
 w('users.xls', XLSX.write(wb, { type: 'buffer', bookType: 'biff8' }));
 w('users.ods', XLSX.write(wb, { type: 'buffer', bookType: 'ods' }));

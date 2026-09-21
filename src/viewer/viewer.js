@@ -161,12 +161,12 @@ async function showPermissionHelp(url) {
       const ok = await chrome.permissions.request({ origins }).catch(() => false);
       if (ok) open({ url }); else setStatus(`Access to ${hostname} was not granted.`);
     },
-  }, `Grant access to ${hostname}`);
+  }, `Allow ${hostname}`);
   ui.mount.replaceChildren(el('div.big-prompt',
-    el('h3', granted ? `Could not reach ${hostname}` : `${hostname} is not an AWS host`),
+    el('h3', granted ? `Could not reach ${hostname}` : `Allow access to ${hostname}?`),
     el('p', granted
-      ? 'The site permission is already granted, so the request itself failed: the server may be offline, block cross-site reads, or the link may be broken. Try Reload.'
-      : 'S3 Any Viewer only has permission for *.amazonaws.com by default. To read files from this site, grant it access. Chrome will ask you to confirm the exact origin, and you can revoke it any time from the extension\'s details page.'),
+      ? 'This site is already allowed, so the request itself failed. The server may be offline, it may block cross-site reads, or the link may have expired. Try Reload.'
+      : 'To open this file, the viewer needs read access to this site. Chrome will ask you to confirm, and you can withdraw it later from the extension\'s details page.'),
     el('div.row', perms && !granted ? grantBtn : null, el('button.tb-btn', { onclick: () => open({ url }) }, 'Retry')),
     !perms ? el('p.muted', 'Running outside the extension: the browser blocked the cross-origin request (CORS).') : null,
   ));

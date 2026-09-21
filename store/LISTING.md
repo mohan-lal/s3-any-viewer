@@ -9,7 +9,7 @@ Everything needed to fill the Chrome Web Store, Microsoft Edge Add-ons and Firef
 | Field | Value | Limit |
 |---|---|---|
 | **Name** | `S3 Any Viewer` | 45 |
-| **Summary** (short description) | `Open any S3 object in the browser, formatted: CSV tables, JSON trees, Parquet, Excel, XML, images, PDF. No AWS keys.` | 132 |
+| **Summary** (short description) | `View any S3 object in the browser, formatted: CSV, JSON, Parquet, Excel and many more. No AWS keys.` | 132 |
 | **Category** | Developer Tools | |
 | **Language** | English | |
 | **Website / homepage** | `https://github.com/mohan-lal/s3-any-viewer` | |
@@ -20,33 +20,22 @@ Everything needed to fill the Chrome Web Store, Microsoft Edge Add-ons and Firef
 
 ## Detailed description
 
+Written as prose on purpose. The store's metadata policy treats descriptions that enumerate formats, brands or features as keyword lists and asks for fewer than five uses of any one term, so keep format names to a passing mention here; the full list lives in the README and the screenshots.
+
 ```
 Stop downloading files just to look at them.
 
-S3 Any Viewer turns the "Open" button in the AWS S3 console into a real file viewer. Click Open on any object and it renders in a new tab, formatted for its type:
-
-• CSV, TSV, PSV or any delimiter → a fast, sortable, filterable table (delimiter auto-detected, header row optional)
-• JSON and JSON Lines → collapsible tree, pretty print, or table view for arrays of records
-• Parquet, Arrow and Feather → table with a schema panel; large files are read with HTTP range requests, no full download
-• Excel (XLSX, XLS, XLSB) and OpenDocument spreadsheets → sheet tabs and header toggle
-• XML → pretty-printed, or a table when it contains repeating records
-• YAML, TOML, INI, .env, .properties → highlighted, with a JSON tree for YAML and TOML
-• Markdown and HTML → rendered safely (sanitized / sandboxed) with a source toggle
-• Logs and source code in 40+ languages → syntax highlighting, and a virtualized viewer with grep for multi-megabyte logs
-• Images, SVG, PDF, video and audio → shown inline
-• ZIP, JAR, WHL, EPUB → browse entries and open any of them in the viewer
-• .gz, .zst and .br wrapped files (for example events.json.gz) → decompressed automatically
-• Anything else → a hex dump, never a silent download
+S3 Any Viewer turns the "Open" button in the AWS console into a real file viewer. Click Open on any object and it renders in a new tab, formatted for its type: CSV, JSON, Parquet, Excel, PDF and many more, including compressed and archived files. Tables you can sort and filter, trees you can fold, documents and media shown inline, and a hex dump for anything else instead of a silent download.
 
 Every table supports sorting, substring filtering across all columns, column resizing, double-click to inspect a cell, and export to CSV, TSV, JSON or the clipboard.
 
 NO AWS CREDENTIALS
-The extension never asks for access keys, session tokens or cookies. The S3 console already generates a short-lived presigned URL when you click Open. S3 Any Viewer simply intercepts that navigation and renders the bytes in the browser. The only network request is the one the console would have made anyway. The console's Download button keeps working as before.
+The extension never asks for access keys, session tokens or cookies. The console already generates a short-lived presigned URL when you click it. The extension simply intercepts that navigation and renders the bytes in the browser. The only network request is the one that would have been made anyway. The console's Download button keeps working as before.
 
 WORKS WITH
 • Amazon S3 console (all regions, including AWS China)
-• Any presigned S3 link, via right-click → "Open link in S3 Any Viewer"
-• S3-compatible stores and CloudFront URLs, after a one-time permission prompt
+• Any presigned link, via right-click → "Open link in S3 Any Viewer"
+• Compatible object stores such as MinIO and Cloudflare R2, and CloudFront URLs, after a one-time permission prompt
 • Local files, via the toolbar popup
 
 PRIVACY
@@ -56,7 +45,7 @@ OPEN SOURCE
 MIT licensed. Source, issues and roadmap: https://github.com/mohan-lal/s3-any-viewer
 ```
 
-(≈2,700 characters; limit 16,000.)
+(≈1,700 characters; limit 16,000. No keyword appears more than four times across summary and description, excluding the product name and URLs.)
 
 ---
 

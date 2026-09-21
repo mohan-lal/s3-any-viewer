@@ -34,7 +34,7 @@ From `src/manifest.json`.
 
 | Permission | Purpose | Scope |
 |---|---|---|
-| `declarativeNetRequest` | Redirect presigned S3 navigations to the viewer | Declarative rules only; request and response contents are not observable through this API |
+| `declarativeNetRequestWithHostAccess` | Redirect presigned S3 navigations to the viewer | Declarative rules only; request and response contents are not observable through this API. The `WithHostAccess` variant additionally confines every rule to hosts the extension already holds permission for, so it cannot act on a site outside `host_permissions`. The extension does not hold `declarativeNetRequestFeedback` or `webRequest`. |
 | `storage` | Two on/off settings | Nothing else is written |
 | `contextMenus` | "Open link in S3 Any Viewer" entry | |
 | Host `*://*.amazonaws.com/*`, `*://*.amazonaws.com.cn/*` | Fetch the object bytes | S3 endpoints; the console domain `console.aws.amazon.com` is not covered |

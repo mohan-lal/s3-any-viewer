@@ -18,7 +18,7 @@ The extension stores two boolean preferences ("intercept Open links", "intercept
 
 | Permission | Why |
 |---|---|
-| `declarativeNetRequest` | Redirect presigned S3 navigations to the viewer page |
+| `declarativeNetRequestWithHostAccess` | Redirect presigned S3 navigations to the viewer page |
 | `storage` | Remember the two preferences above |
 | `contextMenus` | Provide "Open link in S3 Any Viewer" |
 | `*://*.amazonaws.com/*`, `*://*.amazonaws.com.cn/*` | Fetch the object bytes from S3 |

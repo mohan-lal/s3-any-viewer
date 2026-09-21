@@ -64,7 +64,7 @@ S3 console "Open"  ──►  window.open(https://bucket.s3.region.amazonaws.com
                         fetch(bytes) ─► unwrap gzip/zstd/br ─► detect ─► render
 ```
 
-1. **Intercept.** The service worker installs two dynamic `declarativeNetRequest` rules. A high-priority *allow* rule matches `response-content-disposition=attachment`, so the console's **Download** button keeps downloading. A *redirect* rule matches any top-level navigation to a presigned `*.amazonaws.com` URL and sends it to the viewer page, carrying the original URL in the fragment.
+1. **Intercept.** The service worker installs three dynamic `declarativeNetRequest` rules. A high-priority *allow* rule matches `response-content-disposition=attachment`, so the console's **Download** button keeps downloading. Two *redirect* rules, one for the global partition and one for AWS China, match any top-level navigation to a presigned `*.amazonaws.com` URL and send it to the viewer page, carrying the original URL in the fragment.
 2. **Load.** The viewer probes the size with a 1-byte range request, then streams the object with a progress bar. Objects above 256 MB prompt for a partial preview. Parquet files above 32 MB are not downloaded at all; the footer and the requested row groups are fetched with HTTP range requests.
 3. **Detect.** Magic bytes first (PAR1, ARROW1, %PDF, PK, 1F 8B, …), then the file extension, then the `Content-Type`, then content sniffing for text (JSON vs NDJSON vs XML vs delimited). The result can be overridden from the header at any time.
 4. **Render.** Each format has a small renderer module. All tabular formats share one virtualized table with sorting, filtering, resizing, cell inspection and export.
@@ -150,7 +150,7 @@ Append `?ct=application/octet-stream` to a fixture URL to test detection without
 
 ```
 src/
-├── manifest.json          MV3 manifest (declarativeNetRequest, storage, contextMenus; amazonaws.com hosts)
+├── manifest.json          MV3 manifest (declarativeNetRequestWithHostAccess, storage, contextMenus; amazonaws.com hosts)
 ├── background.js          service worker: installs / toggles the redirect rules, context menu
 ├── popup/                 toolbar popup: interception toggles, open URL / local file, format list
 ├── viewer/
@@ -173,7 +173,7 @@ The extension works from the presigned URL the S3 console generates when you cli
 
 | Permission | Used for |
 |---|---|
-| `declarativeNetRequest` | Redirect presigned `*.amazonaws.com` navigations to the viewer. This API cannot read request or response contents. |
+| `declarativeNetRequestWithHostAccess` | Redirect presigned `*.amazonaws.com` navigations to the viewer. Rules can only act on hosts the extension already holds permission for, and this API cannot read request or response contents. |
 | `storage` | Two on/off preferences. |
 | `contextMenus` | The "Open link in S3 Any Viewer" entry. |
 | Host `*.amazonaws.com`, `*.amazonaws.com.cn` | Fetch the object bytes. Does not cover `console.aws.amazon.com`. |

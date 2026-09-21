@@ -90,7 +90,19 @@ S3 console "Open"  ──►  window.open(https://bucket.s3.region.amazonaws.com
 
 ## Install
 
-### From source (recommended for now)
+Requires Chrome 120 or later, or an equivalent Chromium browser.
+
+### Chrome and other Chromium browsers
+
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/s3-any-viewer/embhbifddhjedfffkoapiakkabjlhdjf)**
+
+Tested on Chrome. Brave, Vivaldi and other Chromium browsers install from the same listing and should work, since the extension uses only standard Manifest V3 APIs, but they are untested. Opera needs its own helper extension before it can install from the Chrome Web Store. If you hit a problem on one of these, please open an issue.
+
+### Microsoft Edge
+
+Search for **S3 Any Viewer** in the [Edge Add-ons store](https://microsoftedge.microsoft.com/addons). Edge also runs Chrome extensions, so the Chrome Web Store link above works there as well, once you accept the "Allow extensions from other stores" prompt Edge shows on that page.
+
+### From source
 
 ```bash
 git clone https://github.com/mohan-lal/s3-any-viewer.git
@@ -108,8 +120,6 @@ npm run build
 ### From a release zip
 
 Download `s3-any-viewer-<version>.zip` from the [Releases](https://github.com/mohan-lal/s3-any-viewer/releases) page, unzip it, and load the unzipped folder the same way.
-
-Works in Chrome, Edge, Brave and other Chromium browsers (version 120 or later).
 
 ## Usage
 

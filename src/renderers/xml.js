@@ -1,6 +1,6 @@
 import { el, objectsToTable } from '../lib/util.js';
 import { renderTable } from '../lib/vtable.js';
-import { highlightInto } from './text.js';
+import { searchableText } from './text.js';
 import { makeTabs } from './json.js';
 
 const PRETTY_LIMIT = 8 * 1024 * 1024;
@@ -21,10 +21,10 @@ export async function renderXml(ctx) {
   function show(name) {
     api?.destroy?.(); api = null;
     ctx.mount.innerHTML = '';
-    [...ctx.toolbar.querySelectorAll('.table-toolbar')].forEach(n => n.remove());
-    if (name === 'Pretty' && doc) highlightInto(ctx.mount, prettyXml(doc), 'xml');
+    [...ctx.toolbar.querySelectorAll('.table-toolbar, .view-search')].forEach(n => n.remove());
+    if (name === 'Pretty' && doc) api = searchableText(ctx.mount, ctx.toolbar, prettyXml(doc), 'xml');
     else if (name === 'Table' && rows) api = renderTable(ctx.mount, { columns: rows.columns, rows: rows.rows, name: ctx.name, toolbar: ctx.toolbar });
-    else highlightInto(ctx.mount, text, 'xml');
+    else api = searchableText(ctx.mount, ctx.toolbar, text, 'xml');
   }
   show(doc ? 'Pretty' : 'Raw');
   return { destroy: () => api?.destroy?.() };

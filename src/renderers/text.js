@@ -46,14 +46,14 @@ import vbnet from 'highlight.js/lib/languages/vbnet';
 import x86asm from 'highlight.js/lib/languages/x86asm';
 import latex from 'highlight.js/lib/languages/latex';
 import { HLJS_LANG } from '../lib/formats.js';
-import { el, debounce } from '../lib/util.js';
+import { el } from '../lib/util.js';
+import { searchableLines } from '../lib/search.js';
 
 const langs = { json, xml, yaml, javascript, typescript, python, java, sql, bash, ini, csharp, cpp, c, go, rust, markdown, css, scss, less, dockerfile, makefile, powershell, dos, diff, plaintext, accesslog, properties, kotlin, ruby, php, scala, r, lua, perl, protobuf, graphql, groovy, swift, dart, elixir, erlang, clojure, haskell, vbnet, x86asm, latex };
 for (const [n, l] of Object.entries(langs)) hljs.registerLanguage(n, l);
 
 const HL_LIMIT = 1.5 * 1024 * 1024;   // highlight only below this
 const VIRTUAL_LINES = 20_000;         // switch to virtual line rendering above this
-const LINE_H = 20;
 
 export function langFor(ext) {
   if (!ext) return null;
@@ -77,28 +77,38 @@ export function highlightInto(mount, text, lang, { wrap = false } = {}) {
   return wrapEl;
 }
 
+/**
+ * Text view with search, used by every renderer that shows source text.
+ * Small files idle as a syntax-highlighted <pre>; large files idle as a virtual list.
+ * Typing in the search box filters to matching lines with the term highlighted.
+ */
+export function searchableText(mount, toolbar, text, lang, { wrapToggle = null, stats = null } = {}) {
+  const lines = text.split(/\r?\n/);
+  const large = lines.length > VIRTUAL_LINES || text.length > 8 * 1024 * 1024;
+  let pre = null;
+  const api = searchableLines(mount, toolbar, lines, {
+    virtualWhenIdle: large,
+    idle: () => { pre = el('div'); highlightInto(pre, text, lang, { wrap: !!wrapToggle?.checked }); return pre.firstChild; },
+    onModeChange: (filtering) => { if (wrapToggle) wrapToggle.disabled = filtering || large; },
+  });
+  if (wrapToggle) {
+    wrapToggle.disabled = large;
+    wrapToggle.onchange = () => mount.querySelector('.code-wrap')?.classList.toggle('wrap', wrapToggle.checked);
+  }
+  if (stats) toolbar.prepend(stats);
+  return api;
+}
+
 export async function renderText(ctx) {
   const text = ctx.text();
-  const lines = text.split(/\r?\n/);
   const ext = ctx.ext;
   const lang = ctx.raw ? null : langFor(ext) || (ctx.format === 'code' || ctx.format === 'text' ? autoLang(text, ext) : null);
+  const lineCount = text.length ? text.split(/\r?\n/).length : 0;
 
   const wrapCb = el('input', { type: 'checkbox' });
-  const stats = el('span.tb-stat', `${lines.length.toLocaleString()} lines · ${text.length.toLocaleString()} chars${lang ? ` · ${lang}` : ''}${ctx.partial ? ' · partial preview' : ''}`);
+  const stats = el('span.tb-stat', `${lineCount.toLocaleString()} lines · ${text.length.toLocaleString()} chars${lang ? ` · ${lang}` : ''}${ctx.partial ? ' · partial preview' : ''}`);
   ctx.toolbar.append(el('label.ctl', wrapCb, ' Wrap lines'), stats);
-
-  if (lines.length > VIRTUAL_LINES || text.length > 8 * 1024 * 1024) {
-    // Virtualized line viewer with grep-style filtering for big logs.
-    const filter = el('input.tb-input', { type: 'search', placeholder: 'grep (case-insensitive substring)…' });
-    const hits = el('span.tb-stat');
-    ctx.toolbar.append(filter, hits);
-    wrapCb.disabled = true;
-    return virtualLines(ctx.mount, lines, filter, hits);
-  }
-
-  let node = highlightInto(ctx.mount, text, lang);
-  wrapCb.onchange = () => node.classList.toggle('wrap', wrapCb.checked);
-  return {};
+  return searchableText(ctx.mount, ctx.toolbar, text, lang, { wrapToggle: wrapCb });
 }
 
 function autoLang(text, ext) {
@@ -111,35 +121,4 @@ function autoLang(text, ext) {
   if (/^\s*(SELECT|INSERT|CREATE|WITH|UPDATE|DELETE)\b/im.test(head)) return 'sql';
   if (/^\d{4}-\d\d-\d\d[T ]\d\d:\d\d/m.test(head) || /\[(INFO|WARN|ERROR|DEBUG)\]/.test(head)) return 'accesslog';
   return null;
-}
-
-function virtualLines(mount, lines, filterInput, hitsEl) {
-  const box = el('div.vlines');
-  const spacerTop = el('div'); const spacerBot = el('div'); const body = el('div');
-  box.append(spacerTop, body, spacerBot);
-  mount.appendChild(box);
-  let view = lines.map((_, i) => i);
-  let q = '';
-  function draw() {
-    const start = Math.max(0, Math.floor(box.scrollTop / LINE_H) - 10);
-    const end = Math.min(view.length, Math.ceil((box.scrollTop + box.clientHeight) / LINE_H) + 10);
-    spacerTop.style.height = start * LINE_H + 'px';
-    spacerBot.style.height = Math.max(0, (view.length - end) * LINE_H) + 'px';
-    const frag = document.createDocumentFragment();
-    for (let i = start; i < end; i++) {
-      const li = view[i];
-      frag.appendChild(el('div.line', { className: q ? 'line hit' : 'line' }, el('span.ln', String(li + 1)), el('span.lt', lines[li] || ' ')));
-    }
-    body.replaceChildren(frag);
-  }
-  box.addEventListener('scroll', draw, { passive: true });
-  new ResizeObserver(draw).observe(box);
-  filterInput.addEventListener('input', debounce(() => {
-    q = filterInput.value.toLowerCase();
-    view = q ? lines.reduce((acc, l, i) => { if (l.toLowerCase().includes(q)) acc.push(i); return acc; }, []) : lines.map((_, i) => i);
-    hitsEl.textContent = q ? `${view.length.toLocaleString()} matching lines` : '';
-    box.scrollTop = 0; draw();
-  }, 200));
-  draw();
-  return {};
 }

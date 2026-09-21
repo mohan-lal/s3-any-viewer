@@ -104,7 +104,16 @@ table.vt tbody tr:nth-child(even) td { background: var(--row-alt); }
 .vlines .line { display: flex; white-space: pre; }
 .vlines .ln { flex: none; width: 70px; text-align: right; padding-right: 12px; color: var(--muted); user-select: none; background: var(--bar); position: sticky; left: 0; }
 .vlines .lt { padding-left: 12px; }
-.vlines .line.hit .lt { background: var(--hit); }
+.vlines .line.cur { background: var(--sel); }
+.vlines .line.cur .ln { color: var(--accent); font-weight: 600; }
+
+/* search highlights (text lines and JSON tree) */
+mark { background: var(--hit); color: inherit; padding: 0 1px; border-radius: 2px; }
+mark.cur { outline: 2px solid var(--accent); outline-offset: -1px; }
+.jrow.cur { background: var(--sel); }
+.jhidden { color: var(--muted); font-style: italic; font-family: var(--sans); font-size: 12px; padding: 4px 0 4px 18px; white-space: normal; }
+.tb-btn.view-search { padding: 4px 8px; font-size: 10px; line-height: 1.4; }
+.tb-btn.view-search:disabled { opacity: .4; }
 
 /* json tree */
 .jtree { flex: 1; min-height: 0; overflow: auto; padding: 8px 14px; font-family: var(--mono); font-size: 12.5px; line-height: 20px; }

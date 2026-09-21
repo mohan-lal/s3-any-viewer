@@ -1,5 +1,5 @@
 import { el, formatBytes } from '../lib/util.js';
-import { highlightInto } from './text.js';
+import { searchableText } from './text.js';
 import { makeTabs } from './json.js';
 
 const MIME_BY_EXT = {
@@ -35,17 +35,19 @@ export async function renderSvg(ctx) {
   const text = ctx.text();
   const tabs = makeTabs(['Image', 'Source'], show);
   ctx.toolbar.append(tabs.node);
-  let url = null;
+  let url = null, api = null;
   function show(name) {
+    api?.destroy?.(); api = null;
     ctx.mount.innerHTML = '';
+    [...ctx.toolbar.querySelectorAll('.view-search')].forEach(n => n.remove());
     if (name === 'Image') {
       // <img> never runs scripts inside the SVG.
       url ??= URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
       ctx.mount.appendChild(el('div.media-wrap', el('img', { src: url, alt: ctx.name })));
-    } else highlightInto(ctx.mount, text, 'xml');
+    } else api = searchableText(ctx.mount, ctx.toolbar, text, 'xml');
   }
   show('Image');
-  return { destroy: () => url && URL.revokeObjectURL(url) };
+  return { destroy: () => { api?.destroy?.(); if (url) URL.revokeObjectURL(url); } };
 }
 
 export async function renderPdf(ctx) {

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "S3 Any Viewer",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "View any S3 object in the browser, formatted: CSV, JSON, Parquet, Excel and many more. No AWS keys.",
   "minimum_chrome_version": "120",
   "icons": {

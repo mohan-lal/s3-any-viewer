@@ -1,7 +1,7 @@
 import { load, loadAll } from 'js-yaml';
 import { parse as parseToml } from 'smol-toml';
 import { el } from '../lib/util.js';
-import { highlightInto } from './text.js';
+import { searchableText } from './text.js';
 import { makeTabs, renderJsonTree } from './json.js';
 
 function structured(ctx, lang, parse) {
@@ -11,13 +11,16 @@ function structured(ctx, lang, parse) {
   const tabs = makeTabs(['Source', 'Tree'], show);
   if (err) tabs.disable('Tree');
   ctx.toolbar.append(tabs.node, el('span.tb-stat', err ? `parse error: ${err.split('\n')[0]}` : `${lang} parsed OK`));
+  let api = null;
   function show(name) {
+    api?.destroy?.(); api = null;
     ctx.mount.innerHTML = '';
-    if (name === 'Tree' && !err) renderJsonTree(ctx.mount, value);
-    else highlightInto(ctx.mount, text, lang === 'toml' ? 'ini' : lang);
+    [...ctx.toolbar.querySelectorAll('.view-search')].forEach(n => n.remove());
+    if (name === 'Tree' && !err) api = renderJsonTree(ctx.mount, value, ctx.toolbar);
+    else api = searchableText(ctx.mount, ctx.toolbar, text, lang === 'toml' ? 'ini' : lang);
   }
   show('Source');
-  return {};
+  return { destroy: () => api?.destroy?.() };
 }
 
 export async function renderYaml(ctx) {

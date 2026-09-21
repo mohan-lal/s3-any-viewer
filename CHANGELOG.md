@@ -2,7 +2,18 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-## [0.1.1] - unreleased
+## [0.2.0] - unreleased
+
+### Added
+
+- Search in every text-based view: logs, source code, plain text, XML, YAML, TOML, Markdown source, HTML and SVG source, and the JSON pretty tab. Typing filters the view to the lines that contain the term, highlights each occurrence, and Enter / Shift+Enter or the arrow buttons step through the matches. Clearing the box restores the full file, syntax colours included. Small files idle exactly as before; large files reuse the virtualized list, so a 60,000-line log filters in tens of milliseconds.
+- Search in the JSON tree, also used by NDJSON, YAML and TOML tree tabs. The search runs over the parsed data rather than the page, so it finds values inside collapsed nodes and deep in long arrays. The tree collapses to the branches that contain a match, with the paths auto-expanded and the matched text highlighted in keys and values. Results are capped at 1,000 rendered matches with the full count shown, and a note lists the top-level keys that were hidden.
+
+### Changed
+
+- The large-log grep box is replaced by the new search, which adds word highlighting and match navigation at the same speed.
+
+## [0.1.1] - 2026-09-21
 
 ### Changed
 

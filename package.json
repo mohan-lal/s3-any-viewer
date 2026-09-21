@@ -1,6 +1,6 @@
 {
   "name": "s3-any-viewer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Chrome extension that opens any S3 object in a rich in-browser viewer (CSV, JSON, Parquet, XLSX, XML, images, PDF and more) instead of downloading it. No AWS keys required.",
   "license": "MIT",

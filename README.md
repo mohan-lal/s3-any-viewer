@@ -74,13 +74,13 @@ S3 console "Open"  ──►  window.open(https://bucket.s3.region.amazonaws.com
 | Category | Formats | Presentation |
 |---|---|---|
 | **Delimited** | CSV, TSV, PSV, `;` `:` space `\x01` or any custom delimiter, with or without header row | Virtual table, delimiter auto-detected and overridable, quote character selectable |
-| **JSON** | JSON, GeoJSON, HAR, NDJSON / JSON Lines | Lazy tree, highlighted pretty print, table for arrays of objects and `{ data: [...] }` envelopes |
+| **JSON** | JSON, GeoJSON, HAR, NDJSON / JSON Lines | Lazy tree with search over keys and values, highlighted pretty print, table for arrays of objects and `{ data: [...] }` envelopes |
 | **Columnar** | Parquet (snappy, gzip, zstd, lz4, brotli), Arrow IPC, Feather | Table with schema panel, paged loading, range reads for large files |
 | **Spreadsheets** | XLSX, XLSM, XLSB, XLS, ODS, FODS, SYLK, DIF, PRN | Sheet tabs, header toggle |
 | **Markup** | XML, RSS, Atom, plist, POM, KML, GPX, WSDL, XSD | Pretty print, raw, table of repeating elements |
 | **Config** | YAML, TOML, INI, `.env`, `.properties`, `.conf` | Highlighted source, JSON tree for YAML and TOML |
 | **Documents** | Markdown, HTML | Rendered (sanitized) or sandboxed preview, with source toggle |
-| **Text and code** | Logs, plain text, SQL, Python, JavaScript / TypeScript, Java, Kotlin, Go, Rust, C / C++, C#, Ruby, PHP, shell, PowerShell, Dockerfile, Terraform, Protobuf, GraphQL and about 30 more | Syntax highlighting with line numbers; virtualized viewer with grep for large logs |
+| **Text and code** | Logs, plain text, SQL, Python, JavaScript / TypeScript, Java, Kotlin, Go, Rust, C / C++, C#, Ruby, PHP, shell, PowerShell, Dockerfile, Terraform, Protobuf, GraphQL and about 30 more | Syntax highlighting with line numbers; search that filters to matching lines with highlights and match navigation; virtualized for large logs |
 | **Images** | PNG, JPEG, GIF, WebP, BMP, ICO, AVIF, SVG | Fit / 100 % zoom, dimensions; SVG also shows source |
 | **PDF** | PDF | Browser PDF viewer |
 | **Media** | MP4, WebM, OGG, MOV, MP3, WAV, FLAC, M4A, AAC | Native player |
@@ -126,7 +126,7 @@ Download `s3-any-viewer-<version>.zip` from the [Releases](https://github.com/mo
 - **From the S3 console:** select an object and click **Open**. The viewer opens in the new tab.
 - **From any link:** right-click a link and choose **Open link in S3 Any Viewer**.
 - **From the toolbar popup:** paste a URL (S3-compatible stores and CloudFront are supported after a one-time permission prompt) or open a local file.
-- **In the viewer:** change the **Format** dropdown to override detection, click **Raw** to see the plain text, **Download** to save the original bytes, **Copy** to copy the decoded text. In tables, click a header to sort, type in the filter box to search all columns, double-click a cell to see the full value, and use **Export** for CSV, TSV, JSON or clipboard.
+- **In the viewer:** change the **Format** dropdown to override detection, click **Raw** to see the plain text, **Download** to save the original bytes, **Copy** to copy the decoded text. In tables, click a header to sort, type in the filter box to search all columns, double-click a cell to see the full value, and use **Export** for CSV, TSV, JSON or clipboard. In text views and the JSON tree, type in the search box to show only matching lines or branches with the term highlighted, then press **Enter** or **Shift+Enter** to step through matches. **Escape** clears the search.
 - **Turn it off temporarily:** untick "Intercept S3 Open links" in the popup. The badge shows `off`.
 
 ## Development

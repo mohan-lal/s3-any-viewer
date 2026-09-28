@@ -11,8 +11,8 @@ const UNSUPPORTED_NOTES = {
   xz: 'xz/lzma decompression is not supported yet. Showing raw bytes.',
   '7z': '7-Zip archives are not supported. Showing raw bytes.',
   rar: 'RAR archives are not supported. Showing raw bytes.',
-  docx: 'Word documents are zip containers; open word/document.xml inside to read the text.',
-  pptx: 'PowerPoint files are zip containers; open ppt/slides/*.xml inside.',
+  doc: 'Legacy Word (.doc) files cannot be rendered in the browser. Open it in Word and save as .docx to view it here.',
+  ppt: 'Legacy PowerPoint (.ppt) files cannot be rendered in the browser. Open it in PowerPoint and save as .pptx to view it here.',
 };
 
 export async function renderHex(ctx) {

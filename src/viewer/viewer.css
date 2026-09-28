@@ -171,3 +171,32 @@ iframe.doc { flex: 1; border: 0; width: 100%; height: 100%; background: white; }
 .zip-list tr.file td.name { color: #0969da; cursor: pointer; }
 .zip-list tr.file:hover td { background: var(--bar); }
 .zip-list td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* word documents (docx-preview draws the pages; this is the scrolling desk behind them) */
+.docx-scroll { flex: 1; min-height: 0; overflow: auto; background: #e6e8eb; }
+.docx-scroll .docx-wrapper { background: transparent; padding: 24px 0; }
+
+/* powerpoint: one card per slide */
+.pptx-list { flex: 1; min-height: 0; overflow: auto; padding: 22px 16px; background: var(--bar);
+  display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.pptx-slide { width: min(960px, 100%); background: #fff; color: #1f2328; border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 2px 12px rgb(0 0 0 / .07); padding: 20px 30px 24px; }
+.pptx-slide .num { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .07em; }
+.pptx-slide h2 { margin: 6px 0 4px; font-size: 24px; line-height: 1.25; }
+.pptx-slide .sub { color: #57606a; font-size: 16px; margin-bottom: 10px; }
+.pptx-slide .body { margin-top: 8px; }
+.pptx-slide .p { margin: 5px 0; font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
+.pptx-slide .p.bullet { position: relative; padding-left: 16px; }
+.pptx-slide .p.bullet::before { content: '•'; position: absolute; left: 0; color: #9aa4ae; }
+.pptx-slide .imgs { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; align-items: flex-start; }
+.pptx-slide .imgs img { max-width: 100%; max-height: 340px; border-radius: 6px; border: 1px solid #e5e7eb; }
+.pptx-slide table { border-collapse: collapse; margin: 12px 0 4px; font-size: 13px; }
+.pptx-slide td { border: 1px solid #d0d7de; padding: 5px 10px; white-space: pre-wrap; vertical-align: top; }
+.pptx-slide tr:first-child td { background: #f6f8fa; font-weight: 600; }
+.pptx-slide .ph { color: #8b949e; font-style: italic; font-size: 13px; margin: 6px 0; }
+.pptx-slide details { margin-top: 14px; padding-top: 10px; border-top: 1px solid #eaeef2; font-size: 13px; color: #57606a; }
+.pptx-slide details summary { cursor: pointer; font-weight: 600; }
+.pptx-slide details p { margin: 6px 0 0; }
+
+/* search: matching lines carry an accented line number, so nested context reads as context */
+.vlines .line.hitline .ln { color: var(--accent); }

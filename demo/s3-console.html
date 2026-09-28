@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>demo-analytics-bucket - S3 console</title>
+<style>
+  :root { --ink:#16191f; --muted:#5f6b7a; --line:#d5dbdb; --link:#0972d3; --bg:#f2f3f3; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font:14px/1.45 "Amazon Ember","Helvetica Neue",Arial,sans-serif; }
+  .topbar { height:40px; background:#232f3e; color:#fff; display:flex; align-items:center;
+    gap:20px; padding:0 16px; font-size:13px; }
+  .topbar .svc { font-weight:700; letter-spacing:.2px; }
+  .topbar .sp { flex:1; }
+  .topbar .region { opacity:.9; }
+  .crumb { padding:12px 24px 0; font-size:13px; color:var(--muted); }
+  .crumb a { color:var(--link); text-decoration:none; }
+  h1 { margin:6px 24px 0; font-size:24px; font-weight:700; }
+  .tabs { display:flex; gap:24px; padding:10px 24px 0; border-bottom:1px solid var(--line);
+    font-size:14px; color:var(--muted); }
+  .tabs span { padding-bottom:10px; }
+  .tabs .on { color:var(--ink); font-weight:700; box-shadow:inset 0 -3px 0 #0972d3; }
+  .panel { margin:20px 24px; background:#fff; border:1px solid var(--line); border-radius:8px; }
+  .phead { display:flex; align-items:center; gap:8px; padding:14px 16px; }
+  .phead h2 { margin:0; font-size:17px; font-weight:700; }
+  .phead .count { color:var(--muted); font-weight:400; }
+  .phead .sp { flex:1; }
+  .btn { height:30px; padding:0 12px; border:1px solid #7d8998; border-radius:18px;
+    background:#fff; color:#16191f; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .btn:hover { background:#f2f8fd; border-color:#0972d3; color:#0972d3; }
+  .btn.pri { background:#ff9900; border-color:#ff9900; color:#16191f; font-weight:700; }
+  .btn.act { position:relative; }
+  .toolrow { display:flex; align-items:center; gap:8px; padding:0 16px 12px; }
+  .find { flex:1; height:32px; border:1px solid #7d8998; border-radius:8px; padding:0 10px;
+    color:var(--muted); display:flex; align-items:center; font-size:13px; background:#fff; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th { text-align:left; padding:10px 12px; border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line); color:var(--ink); font-weight:700; background:#fafafa; }
+  tbody td { padding:11px 12px; border-bottom:1px solid #eaeded; }
+  tbody tr.sel td { background:#f1faff; }
+  tbody tr:hover td { background:#f7fbfd; }
+  .name { color:var(--link); text-decoration:none; }
+  td.c { width:44px; text-align:center; }
+  input[type=radio] { width:15px; height:15px; accent-color:#0972d3; cursor:pointer; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="svc">S3</span>
+    <span class="sp"></span>
+    <span class="region">ap-south-1</span>
+  </div>
+
+  <div class="crumb"><a href="#">Amazon S3</a> &rsaquo; <a href="#">Buckets</a> &rsaquo; demo-analytics-bucket</div>
+  <h1>demo-analytics-bucket</h1>
+  <div class="tabs">
+    <span class="on">Objects</span><span>Properties</span><span>Permissions</span>
+    <span>Metrics</span><span>Management</span>
+  </div>
+
+  <div class="panel">
+    <div class="phead">
+      <h2>Objects <span class="count" id="cnt">(10)</span></h2>
+      <span class="sp"></span>
+      <button class="btn">Copy S3 URI</button>
+      <button class="btn">Download</button>
+      <button class="btn pri" id="openBtn">Open</button>
+      <button class="btn">Delete</button>
+      <button class="btn act">Actions &#9662;</button>
+      <button class="btn">Upload</button>
+    </div>
+    <div class="toolrow">
+      <div class="find">Find objects by prefix</div>
+    </div>
+    <table>
+      <thead>
+        <tr><th class="c"></th><th>Name</th><th>Type</th><th>Last modified</th>
+            <th class="num">Size</th><th>Storage class</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+<script>
+const PREFIX = 'exports/2026-09/';
+const FILES = [
+  { key: 'users.csv',      type: 'csv',     mod: 'September 21, 2026, 09:14:22 (UTC+05:30)', size: '400.3 KB' },
+  { key: 'users.parquet',  type: 'parquet', mod: 'September 21, 2026, 09:14:25 (UTC+05:30)', size: '70.0 KB' },
+  { key: 'orders.json.gz', type: 'gz',      mod: 'September 21, 2026, 09:15:01 (UTC+05:30)', size: '9.1 KB' },
+  { key: 'app.log',        type: 'log',     mod: 'September 21, 2026, 09:17:40 (UTC+05:30)', size: '5.2 MB' },
+  { key: 'order.json',     type: 'json',    mod: 'September 20, 2026, 18:02:11 (UTC+05:30)', size: '1.6 KB' },
+  { key: 'users.xlsx',     type: 'xlsx',    mod: 'September 20, 2026, 17:41:09 (UTC+05:30)', size: '325.6 KB' },
+  { key: 'orders.xml',     type: 'xml',     mod: 'September 20, 2026, 17:40:55 (UTC+05:30)', size: '38.6 KB' },
+  { key: 'deploy.yaml',    type: 'yaml',    mod: 'September 19, 2026, 11:22:03 (UTC+05:30)', size: '331 B' },
+  { key: 'doc.pdf',        type: 'pdf',     mod: 'September 19, 2026, 11:20:47 (UTC+05:30)', size: '448 B' },
+  { key: 'bundle.zip',     type: 'zip',     mod: 'September 18, 2026, 20:05:12 (UTC+05:30)', size: '127.8 KB' },
+];
+const tb = document.getElementById('rows');
+FILES.forEach((f, i) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="c"><input type="radio" name="sel" value="${i}"></td>
+    <td><a class="name" href="#">${f.key}</a></td><td class="muted">${f.type}</td>
+    <td class="muted">${f.mod}</td><td class="num muted">${f.size}</td>
+    <td class="muted">Standard</td>`;
+  tr.querySelector('input').addEventListener('change', () => {
+    [...tb.children].forEach(r => r.classList.remove('sel'));
+    tr.classList.add('sel');
+  });
+  tb.appendChild(tr);
+});
+document.getElementById('cnt').textContent = `(${FILES.length})`;
+
+// Opens the viewer on the selected object, the way the extension does when Open is clicked.
+const EXT = new URLSearchParams(location.search).get('ext') || '';
+function target(key) {
+  const src = `${location.origin}/${PREFIX}${key}`;
+  const viewer = EXT ? `chrome-extension://${EXT}/viewer.html` : `${location.origin}/viewer.html`;
+  return `${viewer}#u=${src}`;
+}
+document.getElementById('openBtn').addEventListener('click', () => {
+  const sel = document.querySelector('input[name=sel]:checked');
+  if (!sel) return;
+  window.open(target(FILES[Number(sel.value)].key), '_blank');
+});
+window.__selectFile = (key) => {
+  const i = FILES.findIndex(f => f.key === key);
+  const r = tb.children[i].querySelector('input');
+  r.checked = true; r.dispatchEvent(new Event('change'));
+};
+window.__openSelected = () => document.getElementById('openBtn').click();
+</script>
+</body>
+</html>

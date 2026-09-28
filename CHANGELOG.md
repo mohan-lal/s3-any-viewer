@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - unreleased
+
+### Added
+
+- Word documents (DOCX, DOCM, DOTX) render as pages, with styles, tables, images, headers, footers and footnotes. The renderer is loaded on demand, so it adds nothing to the viewer until a Word file is opened.
+- PowerPoint presentations (PPTX, PPTM, PPSX, POTX) render as one card per slide: title, subtitle, text with bullet levels, tables, pictures and speaker notes. Charts and SmartArt are marked rather than drawn, and slide layout is not reproduced.
+- Office files with no helpful extension, common for S3 keys, are identified from the entry names inside the archive.
+- Search now shows what a matched key contains. In the JSON tree (also used by YAML, TOML and NDJSON), matching the key of an object or list shows everything under it, expanded, with any matches inside it still highlighted and reachable. In text views, a matching line that opens a block brings the block with it: the body of a JSON object, a YAML mapping, an XML element, or a stack trace under a log line. A **Show nested** toggle beside the search box turns this off.
+- An automated test suite (`npm test`) covering format detection, decompression, the interception rules, package integrity, every format and viewer feature in headless Chrome, and the popup. It runs on every push and pull request, and a release is not built if it fails.
+- A load-time benchmark that runs locally after the tests pass, comparing how fast each format opens in this build against the version live on the Chrome Web Store.
+
+### Fixed
+
+- Word and PowerPoint files opened as a list of their internal XML parts instead of as documents.
+- Legacy `.doc` and `.ppt` files were sent to the Excel renderer. They now show a clear note suggesting a save as `.docx` or `.pptx`, since the old binary formats cannot be rendered in a browser. Legacy `.xls` still opens as a spreadsheet.
+- Brotli-compressed objects (`.br` or `Content-Encoding: br`) opened empty. They now decompress, with the same 1 GB output limit as the other formats.
+- **Download** on a compressed object saved the decompressed bytes under the original `.gz`, `.zst` or `.br` name. It now saves the object exactly as stored.
+- **Download** on a large Parquet file that was being read in parts saved nothing. It now fetches the whole object, with progress.
+- **Copy** on a large Parquet file that was being read in parts threw an error. It now explains that the file is read in parts and points to Download.
+- A format that failed to render and fell back to the text or hex view logged a console error even though the fallback worked. It is now a debug message.
+
+### Changed
+
+- JSON files always open in the Pretty view, like a browser's own JSON viewer. Tree and Table remain one click away. Previously, lists of records opened in Table and everything else in Tree.
+- Array positions (0, 1, 2 ...) no longer match a search as if they were keys, so searching for a number finds values instead of expanding every item whose index contains it.
+- The build uses code splitting, so large renderers can be loaded lazily as separate files.
+
+### Known issues
+
+- A server that answers the viewer's initial one-byte range request with `416 Range Not Satisfiable` gets an error page instead of the file. S3 is not affected; this can happen with some non-AWS hosts opened from the popup.
+
 ## [0.2.0] - unreleased
 
 ### Added

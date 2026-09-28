@@ -13,6 +13,8 @@ export const FORMATS = {
   parquet:  { label: 'Parquet',                          renderer: 'parquet',  exts: ['parquet', 'parq', 'pq'] },
   arrow:    { label: 'Arrow IPC / Feather',              renderer: 'arrow',    exts: ['arrow', 'feather', 'ipc', 'arrows'] },
   xlsx:     { label: 'Excel (XLSX, XLSM, XLS, XLSB), ODS', renderer: 'xlsx',   exts: ['xlsx', 'xlsm', 'xlsb', 'xls', 'ods', 'fods', 'dif', 'sylk', 'prn'] },
+  docx:     { label: 'Word (DOCX)',                      renderer: 'docx',     exts: ['docx', 'docm', 'dotx', 'dotm'] },
+  pptx:     { label: 'PowerPoint (PPTX)',                renderer: 'pptx',     exts: ['pptx', 'pptm', 'ppsx', 'potx'] },
   image:    { label: 'Images (PNG, JPEG, GIF, WebP, BMP, ICO, AVIF)', renderer: 'image', exts: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'avif', 'apng', 'jfif'] },
   svg:      { label: 'SVG',                              renderer: 'svg',      exts: ['svg'] },
   pdf:      { label: 'PDF',                              renderer: 'pdf',      exts: ['pdf'] },

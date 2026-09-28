@@ -1,6 +1,9 @@
 // Generates sample files of every supported format into ./fixtures for manual and browser testing.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import * as zlib from 'node:zlib';
+import { randomBytes } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
+import { JPEG_B64, WEBP_B64, WEBM_B64 } from './fixture-media.mjs';
 import { parquetWriteBuffer } from 'hyparquet-writer';
 import { tableFromArrays, tableToIPC } from 'apache-arrow';
 import * as XLSX from 'xlsx';
@@ -111,5 +114,143 @@ const bin = new Uint8Array(4096); for (let i = 0; i < bin.length; i++) bin[i] = 
 w('blob.bin', bin);
 // Fake avro header
 w('data.avro', Buffer.concat([Buffer.from([0x4f, 0x62, 0x6a, 0x01]), Buffer.from('avro.schema{"type":"record"}')]));
+
+// ---------- Office documents ----------
+const png = readFileSync('dist/icons/icon128.png');
+const u8 = (s) => strToU8(s);
+const RELS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+const OREL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+const docxParts = {
+  '[Content_Types].xml': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`),
+  '_rels/.rels': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${RELS}">
+<Relationship Id="rId1" Type="${OREL}/officeDocument" Target="word/document.xml"/></Relationships>`),
+  'word/_rels/document.xml.rels': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${RELS}">
+<Relationship Id="rIdStyles" Type="${OREL}/styles" Target="styles.xml"/>
+<Relationship Id="rIdImg" Type="${OREL}/image" Target="media/logo.png"/>
+<Relationship Id="rIdWeb" Type="${OREL}/hyperlink" Target="https://example.com/report" TargetMode="External"/>
+<Relationship Id="rIdBad" Type="${OREL}/hyperlink" Target="javascript:alert(1)" TargetMode="External"/></Relationships>`),
+  'word/styles.xml': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="36"/></w:rPr></w:style>
+<w:style w:type="table" w:styleId="Grid"><w:name w:val="Table Grid"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="4"/><w:left w:val="single" w:sz="4"/><w:bottom w:val="single" w:sz="4"/><w:right w:val="single" w:sz="4"/><w:insideH w:val="single" w:sz="4"/><w:insideV w:val="single" w:sz="4"/></w:tblBorders></w:tblPr></w:style>
+</w:styles>`),
+  'word/media/logo.png': png,
+};
+const para = (text, style) => `<w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ''}<w:r><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
+const cell = (t) => `<w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr>${para(t)}</w:tc>`;
+docxParts['word/document.xml'] = u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="${OREL}"
+ xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+ xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>
+${para('Quarterly Data Review', 'Heading1')}
+<w:p><w:r><w:t xml:space="preserve">This report summarises the </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>September export</w:t></w:r><w:r><w:t xml:space="preserve"> from the analytics bucket, with </w:t></w:r><w:r><w:rPr><w:i/></w:rPr><w:t>five thousand</w:t></w:r><w:r><w:t xml:space="preserve"> customer records across six cities.</w:t></w:r></w:p>
+${para('Totals by city', 'Heading1')}
+<w:tbl><w:tblPr><w:tblStyle w:val="Grid"/><w:tblW w:w="9000" w:type="dxa"/></w:tblPr>
+<w:tr>${cell('City')}${cell('Customers')}${cell('Total (INR)')}</w:tr>
+<w:tr>${cell('Chennai')}${cell('834')}${cell('410,626.42')}</w:tr>
+<w:tr>${cell('Hyderabad')}${cell('833')}${cell('422,049.99')}</w:tr>
+<w:tr>${cell('Mumbai')}${cell('833')}${cell('414,042.42')}</w:tr></w:tbl>
+${para('')}
+<w:p><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="914400" cy="914400"/><wp:docPr id="1" name="Logo"/>
+<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr>
+<pic:blipFill><a:blip r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>
+<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>
+${para('Figures are unaudited and for internal review only.')}
+<w:p><w:hyperlink r:id="rIdWeb"><w:r><w:t>Full report online</w:t></w:r></w:hyperlink><w:r><w:t xml:space="preserve"> and </w:t></w:r><w:hyperlink r:id="rIdBad"><w:r><w:t>a hostile link</w:t></w:r></w:hyperlink></w:p>
+<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
+</w:body></w:document>`);
+const docx = zipSync(docxParts);
+w('report.docx', docx);
+w('report-docx-noext', docx);
+
+// PPTX: three slides with title, subtitle, bullets at two levels, a table, a picture and notes.
+const P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+const A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+const sp = (phType, paras) => `<p:sp><p:nvSpPr><p:cNvPr id="2" name="sp"/><p:cNvSpPr/><p:nvPr>${phType ? `<p:ph type="${phType}"/>` : ''}</p:nvPr></p:nvSpPr><p:spPr/>
+<p:txBody><a:bodyPr/>${paras.map(([t, lvl = 0, b]) => `<a:p><a:pPr lvl="${lvl}"/><a:r><a:rPr lang="en-US"${b ? ' b="1"' : ''}/><a:t>${t}</a:t></a:r></a:p>`).join('')}</p:txBody></p:sp>`;
+const slide = (inner) => u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="${P}" xmlns:a="${A}" xmlns:r="${OREL}"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${inner}</p:spTree></p:cSld></p:sld>`);
+const tcell = (t) => `<a:tc><a:txBody><a:bodyPr/><a:p><a:r><a:t>${t}</a:t></a:r></a:p></a:txBody></a:tc>`;
+const slideRels = (extra = '') => u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${RELS}">${extra}</Relationships>`);
+w('deck.pptx', zipSync({
+  '[Content_Types].xml': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>
+<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/></Types>`),
+  '_rels/.rels': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${RELS}"><Relationship Id="rId1" Type="${OREL}/officeDocument" Target="ppt/presentation.xml"/></Relationships>`),
+  'ppt/presentation.xml': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:p="${P}" xmlns:r="${OREL}">
+<p:sldIdLst><p:sldId id="256" r:id="rId2"/><p:sldId id="257" r:id="rId3"/><p:sldId id="258" r:id="rId4"/></p:sldIdLst><p:sldSz cx="12192000" cy="6858000"/></p:presentation>`),
+  'ppt/_rels/presentation.xml.rels': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${RELS}">
+<Relationship Id="rId2" Type="${OREL}/slide" Target="slides/slide1.xml"/><Relationship Id="rId3" Type="${OREL}/slide" Target="slides/slide2.xml"/><Relationship Id="rId4" Type="${OREL}/slide" Target="slides/slide3.xml"/></Relationships>`),
+  'ppt/slides/slide1.xml': slide(sp('ctrTitle', [['S3 Any Viewer']]) + sp('subTitle', [['Q3 data platform review']])),
+  'ppt/slides/_rels/slide1.xml.rels': slideRels(`<Relationship Id="rIdN" Type="${OREL}/notesSlide" Target="../notesSlides/notesSlide1.xml"/>`),
+  'ppt/notesSlides/notesSlide1.xml': u8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:notes xmlns:p="${P}" xmlns:a="${A}"><p:cSld><p:spTree>${sp('body', [['Open with the pain point: every file in S3 is a download.']])}</p:spTree></p:cSld></p:notes>`),
+  'ppt/slides/slide2.xml': slide(sp('title', [['What changed this quarter']]) + sp('body', [
+    ['Exports moved to Parquet', 0, true], ['Read in parts, never downloaded whole', 1], ['Schema shown alongside the rows', 1],
+    ['Logs now searchable in place', 0, true], ['60,000 lines filter in about 30 ms', 1]])),
+  'ppt/slides/_rels/slide2.xml.rels': slideRels(),
+  'ppt/slides/slide3.xml': slide(sp('title', [['Totals by city']]) +
+    `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="Table"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl>
+<a:tr h="0">${tcell('City')}${tcell('Customers')}${tcell('Total')}</a:tr><a:tr h="0">${tcell('Chennai')}${tcell('834')}${tcell('410,626')}</a:tr><a:tr h="0">${tcell('Pune')}${tcell('833')}${tcell('412,160')}</a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>` +
+    `<p:pic><p:nvPicPr><p:cNvPr id="5" name="logo" descr="Product logo"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdImg"/></p:blipFill><p:spPr/></p:pic>`),
+  'ppt/slides/_rels/slide3.xml.rels': slideRels(`<Relationship Id="rIdImg" Type="${OREL}/image" Target="../media/image1.png"/>`),
+  'ppt/media/image1.png': png,
+}));
+
+// Legacy Word binary: OLE2 signature plus the UTF-16 stream name the detector looks for.
+const ole = Buffer.alloc(4096);
+Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]).copy(ole, 0);
+Buffer.from('WordDocument', 'utf16le').copy(ole, 1024);
+w('legacy.doc', ole);
+
+// ---------- media ----------
+w('sample.jpg', Buffer.from(JPEG_B64, 'base64'));
+w('sample.webp', Buffer.from(WEBP_B64, 'base64'));
+w('sample.gif', Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64'));
+w('clip.webm', Buffer.from(WEBM_B64, 'base64'));
+{ // half a second of a 440 Hz tone, 16-bit mono PCM
+  const rate = 8000, samples = rate / 2, data = Buffer.alloc(samples * 2);
+  for (let i = 0; i < samples; i++) data.writeInt16LE(Math.round(Math.sin(2 * Math.PI * 440 * i / rate) * 12000), i * 2);
+  const h = Buffer.alloc(44);
+  h.write('RIFF', 0); h.writeUInt32LE(36 + data.length, 4); h.write('WAVE', 8); h.write('fmt ', 12);
+  h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22); h.writeUInt32LE(rate, 24);
+  h.writeUInt32LE(rate * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write('data', 36); h.writeUInt32LE(data.length, 40);
+  w('tone.wav', Buffer.concat([h, data]));
+}
+
+// ---------- more compression and containers ----------
+w('users.json.br', zlib.brotliCompressSync(readFileSync('fixtures/users.json')));
+if (zlib.zstdCompressSync) w('users.csv.zst', zlib.zstdCompressSync(readFileSync('fixtures/users.csv')));
+w('users.xlsb', XLSX.write(wb, { type: 'buffer', bookType: 'xlsb' }));
+w('notes.odt', zipSync({
+  mimetype: [u8('application/vnd.oasis.opendocument.text'), { level: 0 }],
+  'content.xml': u8('<?xml version="1.0" encoding="UTF-8"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"><office:body><office:text><text:p>OpenDocument text</text:p></office:text></office:body></office:document-content>'),
+}));
+
+// JSON with one very large container, for the search expansion budget.
+w('big-container.json', JSON.stringify({
+  report: 'bulk',
+  data: Array.from({ length: 50000 }, (_, i) => ({ id: i, city: cities[i % cities.length], tags: ['a', 'b'], meta: { n: i } })),
+}));
+
+// ---------- a Parquet file over the 32 MB range-read threshold ----------
+// Uncompressed random text keeps it large; cached locally because it takes a few seconds.
+if (!existsSync('fixtures/large.parquet') || statSync('fixtures/large.parquet').size < 34 * 1048576) {
+  const count = 400000;
+  w('large.parquet', new Uint8Array(parquetWriteBuffer({
+    columnData: [
+      { name: 'id', data: Int32Array.from({ length: count }, (_, i) => i), type: 'INT32' },
+      { name: 'payload', data: Array.from({ length: count }, () => randomBytes(48).toString('hex')), type: 'STRING' },
+    ],
+    codec: 'UNCOMPRESSED',
+    rowGroupSize: 50000,
+  })));
+}
 
 console.log('fixtures written');

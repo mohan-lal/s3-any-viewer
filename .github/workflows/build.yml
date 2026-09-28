@@ -25,16 +25,12 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run build
-
-      - name: Generate fixtures (smoke-tests the parsers used at build time)
-        run: npm run fixtures
-
-      - name: Validate manifest
-        run: node -e "const m=require('./dist/manifest.json'); if(m.manifest_version!==3) throw new Error('MV3 expected'); console.log(m.name, m.version)"
-
-      - name: Package
-        run: npm run package
+      # Builds, generates fixtures, packages the release zip, then runs every test suite against
+      # that exact build: detection, decompression, service-worker rules, package integrity,
+      # every format and every feature in headless Chrome (preinstalled on the runner), and the
+      # popup. Any failure stops the workflow before a release is attached.
+      - name: Build and test
+        run: npm test
 
       - name: Per-file checksums
         run: |

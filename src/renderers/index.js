@@ -8,6 +8,8 @@ import { renderText } from './text.js';
 import { renderParquet } from './parquet.js';
 import { renderArrow } from './arrow.js';
 import { renderXlsx } from './xlsx.js';
+import { renderDocx } from './docx.js';
+import { renderPptx } from './pptx.js';
 import { renderImage, renderSvg, renderPdf, renderVideo, renderAudio } from './media.js';
 import { renderZip } from './zip.js';
 import { renderHex } from './hex.js';
@@ -27,6 +29,8 @@ export const RENDERERS = {
   parquet: renderParquet,
   arrow: renderArrow,
   xlsx: renderXlsx,
+  docx: renderDocx,
+  pptx: renderPptx,
   image: renderImage,
   svg: renderSvg,
   pdf: renderPdf,

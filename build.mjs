@@ -85,7 +85,8 @@ const ctx = await esbuild.context({
     popup: 'src/popup/popup.js',
   },
   outdir,
-  splitting: false,
+  splitting: true,              // lazy renderers (e.g. DOCX) become separate chunks
+  chunkNames: 'chunks/[name]-[hash]',
 });
 
 copyStatic();

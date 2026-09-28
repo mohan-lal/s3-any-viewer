@@ -50,6 +50,7 @@ Object contents are treated as hostile input.
 
 - HTML is previewed in an `<iframe>` with an empty `sandbox` attribute.
 - Markdown is converted with `marked` and sanitised with DOMPurify.
+- Word documents are laid out by `docx-preview`; links other than http, https and mailto are removed, and inline event handlers are stripped.
 - SVG is displayed through `<img>`; the source view is plain text.
 - All other renderers build DOM nodes with `textContent`.
 - PDF, images, audio and video use `blob:` URLs handed to the browser's own decoders, revoked when the view changes.

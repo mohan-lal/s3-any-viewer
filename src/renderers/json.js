@@ -12,7 +12,7 @@ export async function renderJson(ctx) {
   try { value = JSON.parse(text.replace(/^﻿/, '')); }
   catch (e) { throw new Error(`Invalid JSON: ${e.message}`); }
 
-  const tabs = makeTabs(['Tree', 'Pretty', 'Table'], show);
+  const tabs = makeTabs(['Pretty', 'Tree', 'Table'], show);
   ctx.toolbar.append(tabs.node, el('span.tb-stat', describe(value)), el('span.grow'),
     el('button.tb-btn', { onclick: () => copyText(JSON.stringify(value, jsonReplacer, 2)) }, 'Copy pretty'),
     el('button.tb-btn', { onclick: () => copyText(JSON.stringify(value, jsonReplacer)) }, 'Copy minified'));
@@ -33,7 +33,10 @@ export async function renderJson(ctx) {
       api = renderTable(ctx.mount, { columns, rows, name: ctx.name, toolbar: ctx.toolbar });
     }
   }
-  show(tableable && Array.isArray(value) && value.length > 1 ? 'Table' : 'Tree');
+  // Always open pretty-printed, like a browser's own JSON viewer; Tree and Table are one click away.
+  const initial = 'Pretty';
+  tabs.select(initial);   // highlight the tab that is actually shown
+  show(initial);
   return { destroy: () => api?.destroy?.() };
 }
 
@@ -102,6 +105,7 @@ function describe(v) {
 
 const MAX_TREE_RESULTS = 1000;   // matches rendered in the filtered tree; the counter still reports the total
 const MAX_INDEX_NODES = 2_000_000;
+const EXPAND_BUDGET = 4000;     // rows drawn when a matched container is expanded in full
 
 /**
  * Lazy JSON tree. When a toolbar is given, a search box is added that filters the tree to the
@@ -176,7 +180,9 @@ function buildIndex(value) {
   const walk = (v, path, key) => {
     if (entries.length >= MAX_INDEX_NODES) { truncated = true; return; }
     const isObj = v && typeof v === 'object' && !(v instanceof Date);
-    entries.push({ path, key: key == null ? null : String(key), val: isObj ? null : primitiveText(v) });
+    // Array positions are not searchable keys: typing "1" should find values, not expand
+    // every item whose index happens to contain a 1.
+    entries.push({ path, key: typeof key === 'string' ? key : null, val: isObj ? null : primitiveText(v) });
     if (!isObj) return;
     if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) walk(v[i], path.concat(i), i); }
     else for (const k of Object.keys(v)) walk(v[k], path.concat(k), k);
@@ -206,6 +212,7 @@ function buildTree(value, search) {
       for (const k of m.path) { if (!t.children.has(k)) t.children.set(k, { children: new Map(), hit: null }); t = t.children.get(k); }
       t.hit = mi;
     });
+    search.budget = { left: EXPAND_BUDGET };
     root.appendChild(filteredNode(null, value, trie, 0, search));
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       const hidden = Object.keys(value).filter(k => !trie.children.has(k));
@@ -224,8 +231,15 @@ function buildTree(value, search) {
   return root;
 }
 
-// A node on a matched path. Containers expand only the children that are on the path.
-function filteredNode(key, v, trie, depth, search) {
+const EMPTY_TRIE = { children: new Map(), hit: null };
+
+/**
+ * A node in the filtered tree. Branches with no match are dropped, with one exception: when a
+ * container's own key matches, the user searched for that key, so everything under it is shown
+ * expanded. Matches inside it stay marked so previous/next still reach them. Expansion draws from
+ * a shared node budget; once it runs out, remaining containers fall back to collapsed nodes.
+ */
+function filteredNode(key, v, trie, depth, search, inMatch = false) {
   const { q } = search;
   const isObj = v && typeof v === 'object' && !(v instanceof Date);
   const m = trie.hit != null ? search.matches[trie.hit] : null;
@@ -233,6 +247,7 @@ function filteredNode(key, v, trie, depth, search) {
   const row = el('div.jrow');
   if (m) row.dataset.mi = String(trie.hit);
   const kq = m?.keyHit ? q : null;
+  search.budget.left--;
   if (!isObj) {
     row.append(el('span.jtog', ' '), keyLabel(key, kq), valueLabel(v, m?.valHit ? q : null));
     wrap.appendChild(row);
@@ -240,14 +255,33 @@ function filteredNode(key, v, trie, depth, search) {
   }
   const keys = Array.isArray(v) ? null : Object.keys(v);
   const n = keys ? keys.length : v.length;
-  if (trie.children.size === 0) {
-    // Matched by key only, nothing below it matched: show it collapsed with a working toggle.
-    return node(key, v, depth, false, kq, row);
+  const summary = Array.isArray(v) ? `[ ${n.toLocaleString()} items ]` : `{ ${n.toLocaleString()} keys }`;
+  if (n === 0) {
+    row.append(el('span.jtog', ' '), keyLabel(key, kq), el('span.jsum', summary));
+    wrap.appendChild(row);
+    return wrap;
   }
-  row.append(el('span.jtog', '▾'), keyLabel(key, kq), el('span.jsum', { hidden: true }, Array.isArray(v) ? `[ ${n.toLocaleString()} items ]` : `{ ${n.toLocaleString()} keys }`));
+  const showAll = inMatch || !!m?.keyHit;
+  if (showAll && search.budget.left <= 0 && trie.children.size === 0) {
+    return node(key, v, depth, false, kq, row);             // out of budget: collapsed, toggle works
+  }
+  row.append(el('span.jtog', '▾'), keyLabel(key, kq), el('span.jsum', { hidden: true }, summary));
   const ch = el('div.jchildren');
-  const order = keys ? keys.filter(k => trie.children.has(k)) : [...trie.children.keys()].sort((a, b) => a - b);
-  for (const k of order) ch.appendChild(filteredNode(k, v[k], trie.children.get(k), depth + 1, search));
+  let notShown = 0;
+  if (showAll) {
+    // Check the budget child by child: descendants spend it too, so it cannot be reserved up
+    // front. Inner matches are always drawn, so previous/next can still reach them.
+    for (let i = 0; i < n; i++) {
+      const k = keys ? keys[i] : i;
+      const sub = trie.children.get(k);
+      if (search.budget.left <= 0 && !sub) { notShown++; continue; }
+      ch.appendChild(filteredNode(k, v[k], sub || EMPTY_TRIE, depth + 1, search, true));
+    }
+  } else {
+    const order = keys ? keys.filter(k => trie.children.has(k)) : [...trie.children.keys()].sort((a, b) => a - b);
+    for (const k of order) ch.appendChild(filteredNode(k, v[k], trie.children.get(k), depth + 1, search, false));
+  }
+  if (notShown > 0) ch.appendChild(el('div.jhidden', `${notShown.toLocaleString()} more not shown; clear the search to browse them`));
   wrap.append(row, ch);
   return wrap;
 }

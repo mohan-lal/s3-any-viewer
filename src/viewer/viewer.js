@@ -34,13 +34,30 @@ ui.rawBtn.addEventListener('click', () => {
   renderCurrent(on ? 'text' : (ui.formatSelect.value || current.format), { raw: on });
 });
 ui.reloadBtn.addEventListener('click', () => { if (current?.url) open({ url: current.url }); });
-ui.downloadBtn.addEventListener('click', () => {
+ui.downloadBtn.addEventListener('click', async () => {
   const d = top();
-  if (d) downloadBlob(new Blob([d.bytes]), baseName(d.name));
+  if (!d) return;
+  // The object exactly as stored: still compressed if it was, under its own name.
+  if (d.original || d.bytes) { downloadBlob(new Blob([d.original || d.bytes]), baseName(d.name)); return; }
+  if (!d.url) return;
+  // Read in parts (a large Parquet file): the whole object has to be fetched now.
+  try {
+    showProgress('Downloading…', 0);
+    const res = await fetchBytes(d.url, {
+      onProgress: (l, t) => showProgress(`Downloading… ${formatBytes(l)}${t ? ' / ' + formatBytes(t) : ''}`, t ? l / t : null),
+    });
+    downloadBlob(new Blob([res.bytes]), baseName(d.name));
+    setStatus('Downloaded.');
+  } catch (e) {
+    setStatus(`Download failed: ${e.message}`);
+  } finally {
+    hideProgress();
+  }
 });
 ui.copyBtn.addEventListener('click', async () => {
   const d = top();
   if (!d) return;
+  if (!d.bytes) { setStatus('Nothing to copy: this file is read in parts. Use Download instead.'); return; }
   if (d.bytes.length > 50 * 1024 * 1024) { setStatus('Too large to copy (50 MB limit).'); return; }
   setStatus((await copyText(decodeText(d.bytes))) ? 'Copied to clipboard.' : 'Clipboard write failed.');
 });
@@ -192,6 +209,7 @@ function askLarge(size, rangeOk) {
 async function afterLoad() {
   // Unwrap compression layers (gzip/zstd/brotli), possibly nested (file.csv.gz).
   let bytes = current.bytes, name = current.name, detected = null, layers = [];
+  current.original = bytes;             // kept for Download: the object as stored, before unwrapping
   if (bytes) {
     for (let i = 0; i < 3; i++) {
       detected = detectFormat({ name, contentType: current.contentType, bytes });
@@ -248,7 +266,9 @@ async function renderCurrent(format, { raw = false } = {}) {
     activeRenderer = (await fn(ctx)) || null;
     if (ui.status.textContent.startsWith('Rendering')) setStatus('');
   } catch (e) {
-    console.error(e);
+    // Handled below and shown on the page; a console error would also land in the extension's
+    // Errors list on chrome://extensions and make a handled case look like a crash.
+    console.debug('render failed, falling back:', e);
     if (format !== 'text' && format !== 'hex' && doc.bytes) {
       setStatus(`Failed to render as ${format}: ${e.message}. Falling back.`);
       const fallback = ctx.bytes && looksTextish(ctx.bytes) ? 'text' : 'hex';
@@ -266,7 +286,7 @@ async function openSub({ bytes, name }) {
   let inner = bytes, innerName = name;
   if (detected.format === 'gzip') { try { inner = await decompress(bytes, detected.compression); innerName = stripExt(stripExt(name, 'gz'), 'zst'); } catch { /* keep raw */ } }
   const det2 = inner === bytes ? detected : detectFormat({ name: innerName, bytes: inner });
-  stack.push({ bytes: inner, name, innerName, format: det2.format, detected: det2, size: inner.length });
+  stack.push({ bytes: inner, original: bytes, name, innerName, format: det2.format, detected: det2, size: inner.length });
   drawCrumbs();
   ui.formatSelect.value = det2.format in RENDERERS ? det2.format : 'hex';
   ui.detectInfo.textContent = `Detected: ${det2.format} (by ${det2.reason})`;

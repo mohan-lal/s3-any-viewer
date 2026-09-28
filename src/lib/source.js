@@ -1,5 +1,6 @@
 // Loading bytes from a URL (presigned S3 or anything else) or a local File, with progress.
-import { decompressZstd, decompressBrotli } from 'hyparquet-compressors';
+import { decompressZstd } from 'hyparquet-compressors';
+import { brotliDecompress } from './brotli.js';
 
 export class LoadAborted extends Error {}
 
@@ -88,7 +89,7 @@ export async function decompress(bytes, compression) {
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
   if (compression === 'zstd') return decompressZstd(bytes);
-  if (compression === 'brotli') return decompressBrotli(bytes);
+  if (compression === 'brotli') return brotliDecompress(bytes);
   throw new Error(`Unsupported compression: ${compression}`);
 }
 

@@ -8,6 +8,9 @@ release/
 # generated sample data
 fixtures/
 
+# load-time benchmark working files and report
+.bench/
+
 # local tooling
 .vscode/
 .idea/

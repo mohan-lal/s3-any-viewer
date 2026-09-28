@@ -1,6 +1,6 @@
 {
   "name": "s3-any-viewer",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Chrome extension that opens any S3 object in a rich in-browser viewer (CSV, JSON, Parquet, XLSX, XML, images, PDF and more) instead of downloading it. No AWS keys required.",
   "license": "MIT",
@@ -24,16 +24,20 @@
   ],
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
+    "pretest": "npm run build && npm run fixtures && npm run package",
+    "test": "node --test --test-concurrency=1 \"test/*.test.mjs\"",
+    "posttest": "node scripts/bench.mjs",
+    "bench": "node scripts/bench.mjs",
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
     "fixtures": "node scripts/make-fixtures.mjs",
     "serve": "node scripts/serve.mjs",
     "package": "node scripts/package.mjs",
     "screenshots": "node scripts/screenshots.mjs",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('release',{recursive:true,force:true})\"",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "demo": "node scripts/record-demo.mjs",
     "demo:encode": "node scripts/encode-demo.mjs"
   },
@@ -45,6 +49,7 @@
   },
   "dependencies": {
     "apache-arrow": "^18.0.0",
+    "docx-preview": "^0.4.1",
     "dompurify": "^3.2.0",
     "fflate": "^0.8.2",
     "highlight.js": "^11.11.0",

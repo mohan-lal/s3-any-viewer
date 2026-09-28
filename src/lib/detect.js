@@ -56,6 +56,26 @@ function matchMagic(bytes) {
   return null;
 }
 
+// Entry names live in the zip's central directory at the end of the file.
+function officeZipKind(bytes) {
+  const tail = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 262144)));
+  if (tail.includes('word/document.xml')) return 'docx';
+  if (tail.includes('ppt/presentation.xml')) return 'pptx';
+  if (tail.includes('xl/workbook.xml')) return 'xlsx';
+  return null;
+}
+
+// Legacy OLE2 files name their main stream in UTF-16LE; fall back to the extension.
+function oleKind(bytes, ext) {
+  if (['doc', 'dot'].includes(ext)) return 'doc';
+  if (['ppt', 'pps', 'pot'].includes(ext)) return 'ppt';
+  if (['xls', 'xlt', 'xla'].includes(ext)) return 'xls';
+  const head = new TextDecoder('utf-16le').decode(bytes.subarray(0, Math.min(bytes.length, 1048576)));
+  if (head.includes('WordDocument')) return 'doc';
+  if (head.includes('PowerPoint Document')) return 'ppt';
+  return 'xls';
+}
+
 const MIME_TO_FORMAT = [
   [/^text\/csv/, 'csv'], [/^text\/tab-separated/, 'csv'],
   [/json$/, 'json'], [/^application\/x-ndjson/, 'ndjson'], [/jsonl/, 'ndjson'],
@@ -120,14 +140,22 @@ export function detectFormat({ name = '', contentType = '', bytes }) {
     if (magic.fmt.startsWith('unsupported:')) return { format: 'hex', ext, reason: 'magic', unsupported: magic.fmt.split(':')[1] };
     if (magic.fmt === 'gzip') return { format: 'gzip', compression: magic.comp, ext, reason: 'magic' };
     if (magic.fmt === 'zip') {
-      // OOXML / ODF spreadsheets and other zip-based containers.
+      // Office Open XML, ODF and plain archives all start with the same signature.
       const byExt = formatForExt(ext);
-      if (byExt === 'xlsx') return { format: 'xlsx', ext, reason: 'magic+ext' };
+      if (byExt === 'xlsx' || byExt === 'docx' || byExt === 'pptx') return { format: byExt, ext, reason: 'magic+ext' };
       if (byExt === 'zip') return { format: 'zip', ext, reason: 'magic' };
-      if (['docx', 'pptx', 'odt', 'odp'].includes(ext)) return { format: 'zip', ext, reason: 'magic', unsupported: ext };
+      if (['odt', 'odp'].includes(ext)) return { format: 'zip', ext, reason: 'magic', unsupported: ext };
+      // No telling extension (common for S3 keys): look at the entry names inside.
+      const inner = officeZipKind(bytes);
+      if (inner) return { format: inner, ext, reason: 'magic+contents' };
       return { format: 'zip', ext, reason: 'magic' };
     }
-    if (magic.fmt === 'ole') return { format: 'xlsx', ext, reason: 'magic', note: ext === 'xls' ? undefined : 'OLE2 container: opened as legacy Excel' };
+    if (magic.fmt === 'ole') {
+      // Legacy Office binaries share one container; only Excel ones can be rendered.
+      const kind = oleKind(bytes, ext);
+      if (kind === 'doc' || kind === 'ppt') return { format: 'hex', ext, reason: 'magic', unsupported: kind };
+      return { format: 'xlsx', ext, reason: 'magic' };
+    }
     if (magic.fmt === 'image' && magic.note === 'tiff') return { format: 'hex', ext, reason: 'magic', unsupported: 'tiff' };
     return { format: magic.fmt, ext, reason: 'magic' };
   }

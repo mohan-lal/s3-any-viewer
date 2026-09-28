@@ -143,10 +143,7 @@ Download `s3-any-viewer-<version>.zip` from the [Releases](https://github.com/mo
 <details>
 <summary><b>Chrome says it can "read and change your data" on amazonaws.com sites. Why?</b></summary>
 
-That is Chrome's standard wording for any extension that works with a website; it cannot be made narrower. Popular developer extensions such as JSON Viewer and JSON Formatter show the same message, and for every website you visit, because they need to reformat JSON pages anywhere. S3 Any Viewer's access is limited to `amazonaws.com`. Here it covers two things:
-
-- **Change:** when you click **Open** in the S3 console, the tab is sent to the viewer instead of downloading the file. Changing where that one tab goes is the only change the extension makes.
-- **Read:** the viewer downloads the file you opened so it can display it.
+That is Chrome's standard wording for any extension that works with a website; it cannot be made narrower. Popular developer extensions such as JSON Viewer and JSON Formatter show the same message, and for every website you visit, because they need to reformat JSON pages anywhere. S3 Any Viewer's access is limited to `amazonaws.com`. The only thing it changes is where the tab goes when you click **Open**: to the viewer instead of a download.
 
 The extension has no content scripts, so it cannot read or alter any web page, including the AWS console. Its access covers `amazonaws.com` addresses, which is where S3 serves files from, and does not include the console at `console.aws.amazon.com`.
 

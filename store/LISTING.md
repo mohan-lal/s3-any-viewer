@@ -40,7 +40,7 @@ WORKS WITH
 
 COMMON QUESTIONS
 Why does Chrome say it can "read and change" data on amazonaws.com?
-That is Chrome's standard wording for site access. Many popular developer tools, such as data formatters, show the same message for every website; this one is limited to amazonaws.com. It uses this for two things only: redirecting the tab to the viewer, and downloading the file you chose. It has no content scripts, so it cannot read or alter any web page.
+That is Chrome's standard wording for site access. Many popular developer tools, such as data formatters, show the same message for every website; this one is limited to amazonaws.com. All it does with that is send the tab to the viewer instead of a download. It has no content scripts, so it cannot read or alter any web page.
 
 Why is access to another site requested?
 Only when you view a non-Amazon address yourself, from the popup or the right-click menu. Chrome asks for that one site, and you can remove it at any time under Site access in the extension's details.

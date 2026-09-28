@@ -33,11 +33,14 @@
     "serve": "node scripts/serve.mjs",
     "package": "node scripts/package.mjs",
     "screenshots": "node scripts/screenshots.mjs",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('release',{recursive:true,force:true})\""
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('release',{recursive:true,force:true})\"",
+    "demo": "node scripts/record-demo.mjs",
+    "demo:encode": "node scripts/encode-demo.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
     "hyparquet-writer": "^0.16.0",
+    "mp4-muxer": "^5.2.2",
     "puppeteer-core": "^25.11.0"
   },
   "dependencies": {

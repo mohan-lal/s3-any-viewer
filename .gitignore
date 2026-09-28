@@ -14,3 +14,10 @@ fixtures/
 *.log
 .DS_Store
 Thumbs.db
+
+# demo recording artifacts
+demo/frames/
+demo/mp4-muxer.js
+demo/.dl/
+demo/*.mp4
+demo/preview/

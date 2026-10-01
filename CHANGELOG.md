@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - unreleased
+
+### Fixed
+
+- Large text views kept scrolling on their own after a single turn of the mouse wheel or a short trackpad swipe, and could not be stopped. This affected JSON in the Pretty view and any text over 20,000 lines, search results with many matching lines, and the hex view. Scrolling now stops where you leave it.
+
 ## [0.3.0] - unreleased
 
 ### Added

@@ -313,6 +313,32 @@ describe('text views', () => {
     await v.assertClean();
   });
 
+  // Virtual lists resize a spacer above the visible rows as you scroll. With the browser's
+  // scroll anchoring on, that made the view keep scrolling by itself after one wheel turn.
+  for (const [label, file, sel, search] of [
+    ['large JSON in Pretty', 'big-container.json', '.vlines'],
+    ['large log', 'app.log', '.vlines'],
+    ['search results', 'app.log', '.vlines', 'ERROR'],
+    ['hex view', 'blob.bin', '.hex'],
+    ['table', 'users.csv', '.vt-scroller'],
+  ]) {
+    it(`${label}: the mouse wheel scrolls only as far as it is turned`, async () => {
+      await v.open(file);
+      if (search) await v.search(search, 500);
+      const box = await v.page.$(sel);
+      const r = await box.boundingBox();
+      await v.page.mouse.move(r.x + r.width / 2, r.y + r.height / 2);
+      for (let n = 0; n < 4; n++) { await v.page.mouse.wheel({ deltaY: 120 }); await sleep(60); }
+      await sleep(300);
+      const after = await v.page.$eval(sel, b => b.scrollTop);
+      await sleep(1000);
+      const later = await v.page.$eval(sel, b => b.scrollTop);
+      assert.equal(later, after, `kept scrolling on its own: ${after} → ${later}`);
+      assert.ok(Math.abs(after - 480) <= 40, `four wheel notches should scroll about 480 px, scrolled ${after}`);
+      await v.assertClean();
+    });
+  }
+
   it('small code file: wrap toggles, and clearing a search restores syntax colours', async () => {
     await v.open('script.py');
     await v.page.$eval('#toolbar input[type=checkbox]', c => { c.checked = true; c.dispatchEvent(new Event('change')); });

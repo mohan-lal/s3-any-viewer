@@ -137,6 +137,11 @@ mark.cur { outline: 2px solid var(--accent); outline-offset: -1px; }
 .hex .off { color: var(--muted); }
 .hex .asc { color: var(--muted); }
 
+/* Virtual lists resize a spacer above the visible rows on every scroll. With Chrome's scroll
+   anchoring on, the browser scrolls to compensate, which redraws, which resizes the spacer
+   again, and the view keeps scrolling on its own. */
+.vt-scroller, .vlines, .hex { overflow-anchor: none; }
+
 /* media */
 .media-wrap { flex: 1; min-height: 0; overflow: auto; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(color-mix(in srgb, var(--fg) 6%, transparent) 0 25%, transparent 0 50%) 50% / 24px 24px; }
 .media-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
